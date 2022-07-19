@@ -1,0 +1,67 @@
+#### general settings
+
+name: multiscale-decomp_sidd_mse_q5
+use_tb_logger: true
+gpu_ids: [0]
+# manual_seed: 1
+
+#### datasets
+
+datasets:
+  train:
+    root: ./annotations/sidd_medium_srgb_train.json
+    name: sidd
+    patch_size: 256
+    batch_size: 16
+    n_workers: 4
+    use_shuffle: true
+  val:
+    root: ./annotations/sidd_medium_srgb_val.json
+    name: sidd
+    patch_size: 256
+    batch_size: 1
+    n_workers: 0
+    use_shuffle: false
+  
+#### network
+
+network:
+  model: multiscale-decomp
+  quality: 5
+  criterions:
+    criterion_metric: mse
+    criterion_fea: l1
+  lambdas: 
+    lambda_metric: 0.0250
+    lambda_fea: 3.
+  alphas:
+    alpha_metric: 1.
+    alpha_fea: 1.
+  pretrained: true
+  
+#### training settings
+
+train:
+  mode: epoch
+  epoch:
+    value: 600
+    lr: !!float 1e-4
+    lr_aux: !!float 1e-3
+    lr_scheme: LambdaLR
+    warm_up_counts: 20
+    milestones: [450, 550] 
+    gamma: 0.1
+    val_freq: 1 # number of epochs to start a visualization
+  clip_max_norm: 1.0
+  loss_cap: 1000
+
+#### path
+path:
+  root: ~/
+  # checkpoint: ../experiments/sample/checkpoints/checkpoint_010.pth.tar
+
+#### logger
+
+logger:
+  print_freq: 100 # number of iterations to print a training progress
+  save_checkpoint_freq: 10  # number of epochs to save a checkpoint
