@@ -1,6 +1,6 @@
-# Denoise Compression
+# DenoiseCompression
 
-**Official PyTorch Implementation for [Optimizing Image Compression via Joint Learning with Denoising (ECCV2022)](https://github.com/felixcheng97/DenoiseCompression).**
+**Official PyTorch Implementation for [Optimizing Image Compression via Joint Learning with Denoising (ECCV2022)](https://arxiv.org/abs/2207.10869).**
 
 ![](./figures/overview.png)
 
@@ -33,7 +33,7 @@ pip install image_slicer
 
 ## Dataset Preparation
 ### 1. Synthetic Dataset
-The Flicker 2W dataset (or your own data) is used for training and validation. You could download the dataset on its official [GitHub](https://github.com/liujiaheng/CompressionData) page or through this direct [link](https://drive.google.com/file/d/1EK04NO6o3zbcFv5G-vtPDEkPB1dWblEF/view). Place the unzipped dataset under the `./data` directory with the following structure:
+The Flicker 2W dataset (or your own data) is used for training and validation. You could download the dataset through this [link](https://drive.google.com/file/d/1EK04NO6o3zbcFv5G-vtPDEkPB1dWblEF/view), which is provided on their official [GitHub](https://github.com/liujiaheng/CompressionData) page. Place the unzipped dataset under the `./data` directory with the following structure:
 ```
 .
 `-- data
