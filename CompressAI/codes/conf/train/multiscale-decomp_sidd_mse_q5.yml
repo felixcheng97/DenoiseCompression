@@ -58,7 +58,7 @@ train:
 #### path
 path:
   root: ~/
-  # checkpoint: ../experiments/sample/checkpoints/checkpoint_010.pth.tar
+  # checkpoint: ../../experiments/multiscale-decomp_sidd_mse_q5/checkpoints/checkpoint_best_loss.pth.tar
 
 #### logger
 

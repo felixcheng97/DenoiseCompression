@@ -2,6 +2,10 @@
 
 **Official PyTorch Implementation for [Optimizing Image Compression via Joint Learning with Denoising (ECCV2022)](https://arxiv.org/abs/2207.10869).**
 
+> **Optimizing Image Compression via Joint Learning with Denoising** <br>
+>  Ka Leong Cheng*, Yueqi Xie*, Qifeng Chen <br>
+>  HKUST <br>
+
 ![](./figures/overview.png)
 
 
@@ -31,17 +35,20 @@ pip install imagesize
 pip install image_slicer
 ```
 
+
 ## Dataset Preparation
 ### 1. Synthetic Dataset
 The Flicker 2W dataset (or your own data) is used for training and validation. You could download the dataset through this [link](https://drive.google.com/file/d/1EK04NO6o3zbcFv5G-vtPDEkPB1dWblEF/view), which is provided on their official [GitHub](https://github.com/liujiaheng/CompressionData) page. Place the unzipped dataset under the `./data` directory with the following structure:
 ```
 .
 `-- data
+    |-- CLIC
     |-- flicker
     |   `-- flicker_2W_images
-    |       |-- xxx.jpg
+    |       |-- 1822067_f8836ff595_b.jpg
     |       |-- ...
-    |       `-- xxx.jpg
+    |       `-- 35660517375_a07980467e_b.jpg
+    |-- kodak
     `-- SIDD   
 ```
 
@@ -51,7 +58,35 @@ cd codes/scripts
 python flicker_process.py
 ```
 
-### 2. Real-world Dataset
+### 2. Kodak Dataset
+The Kodak PhotoCD image dataset (Kodak) dataset consists of 24 uncompressed PNG true-color images with resolution sizes of 768 $\times$ 512. Our models trained on the Flicker 2W dataset with synthetic noise are tested on Kodak images with synthetic noise at 4 different pre-determined levels. You could download the dataset on their offical [website](http://r0k.us/graphics/kodak/). Place the Kodak dataset under the `./data` directory with the following structure:
+```
+.
+`-- data
+    |-- CLIC
+    |-- flicker
+    |-- kodak
+    |   |-- kodim01.png
+    |   |-- ...
+    |   `-- kodim24.png
+    `-- SIDD   
+```
+
+### 3. CLIC Dataset
+The CLIC Professional Validation (CLIC) dataset is the validation set of the 4th Workshop and Challenge on Learned Image Compression (2021), which contains 41 high-resolution (2K) images. Our models trained on the Flicker 2W dataset with synthetic noise are also tested on CLIC images with synthetic noise at the 4 different pre-determined levels. You could download the dataset on their CLIC 2021 offical [website](http://clic.compression.cc/2021/tasks/index.html). Place the CLIC dataset under the `./data` directory with the following structure:
+```
+.
+`-- data
+    |-- CLIC
+    |   |-- alberto-montalesi-176097.png
+    |   |-- ...
+    |   `-- zugr-108.png
+    |-- flicker
+    |-- kodak
+    `-- SIDD   
+```
+
+### 4. Real-world Dataset
 We use the public [SIDD-Medium](https://www.eecs.yorku.ca/~kamel/sidd/dataset.php) dataset for training; we further validate and test on the [SIDD Benchmark](https://www.eecs.yorku.ca/~kamel/sidd/benchmark.php) data. Specifically, you need to download the followings:
 * SIDD-Medium Dataset - sRGB images only (~12 GB)
 * SIDD Benchmark - SIDD Benchmark Data - Noisy sRGB data
@@ -63,7 +98,9 @@ After you download all the data, place the unzipped dataset under the `./data` d
 ```
 .
 `-- data
+    |-- CLIC
     |-- flicker
+    |-- kodak
     `-- SIDD  
         |-- SIDD_Benchmark_Data
         |-- SIDD_Benchmark_zips
@@ -80,15 +117,24 @@ python sidd_block.py
 python sidd_tile_annotations.py
 ```
 
+
 ## Training
-To train a model for a specific task, run the following script:
+To train a model, run the following script:
 ```bash
 cd codes
 OMP_NUM_THREADS=4 python train.py -opt ./conf/train/<xxx>.yml
 ```
 
 ## Testing
-We are going to release our testing scripts, models, and results. Please stay tuned with us.
+We provide our trained models in our paper for your reference. Download all the pretrained weights of our models from [Google Drive](https://drive.google.com/drive/folders/1ERVv18YW4Tx-Ar5alL81UJ3mhpKwvyUH?usp=sharing) or [Baidu Drive](https://pan.baidu.com/s/1xKSNkZhC3d-DFaIQrh5wdw) (extraction code: 756c). Unzip the zip file and place pretrained models under the `./experiments` directory.
+
+To test a model, run the following script:
+```bash
+cd codes
+OMP_NUM_THREADS=4 python test.py -opt ./conf/test/<xxx>.yml
+```
+
+We also release the RD results of our models under the `./reports` directory. Note that to PSNR values on SIDD Benchmark patches are obtained by submitting the results to the SIDD website at this submission [page](http://130.63.97.225/sidd/benchmark_submit.php). 
 
 
 ## Acknowledgement

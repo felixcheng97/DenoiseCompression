@@ -1,0 +1,96 @@
+#### general settings
+
+name: multiscale-decomp_mse_q2
+use_tb_logger: true
+gpu_ids: [0]
+# manual_seed: 1
+
+#### datasets
+
+datasets:
+  kodak_level1:
+    root: ../../data/kodak
+    name: synthetic-test
+    level: 1
+    batch_size: 1
+    n_workers: 0
+    use_shuffle: false
+    cuda: false
+    estimation: false
+  kodak_level2:
+    root: ../../data/kodak
+    name: synthetic-test
+    level: 2
+    batch_size: 1
+    n_workers: 0
+    use_shuffle: false
+    cuda: false
+    estimation: false
+  kodak_level3:
+    root: ../../data/kodak
+    name: synthetic-test
+    level: 3
+    batch_size: 1
+    n_workers: 0
+    use_shuffle: false
+    cuda: false
+    estimation: false
+  kodak_level4:
+    root: ../../data/kodak
+    name: synthetic-test
+    level: 4
+    batch_size: 1
+    n_workers: 0
+    use_shuffle: false
+    cuda: false
+    estimation: false
+  clic_level1:
+    root: ../../data/CLIC
+    name: synthetic-test
+    level: 1
+    batch_size: 1
+    n_workers: 0
+    use_shuffle: false
+    cuda: false
+    estimation: false
+  clic_level2:
+    root: ../../data/CLIC
+    name: synthetic-test
+    level: 2
+    batch_size: 1
+    n_workers: 0
+    use_shuffle: false
+    cuda: false
+    estimation: false
+  clic_level3:
+    root: ../../data/CLIC
+    name: synthetic-test
+    level: 3
+    batch_size: 1
+    n_workers: 0
+    use_shuffle: false
+    cuda: false
+    estimation: false
+  clic_level4:
+    root: ../../data/CLIC
+    name: synthetic-test
+    level: 4
+    batch_size: 1
+    n_workers: 0
+    use_shuffle: false
+    cuda: false
+    estimation: false
+  
+  
+#### network
+
+network:
+  model: multiscale-decomp
+  
+
+#### path
+
+path:
+  root: ~/
+  # checkpoint: ../../experiments/multiscale-decomp_mse_q2/checkpoints/checkpoint_best_loss.pth.tar
+  update: true

@@ -15,9 +15,7 @@ import warnings
 
 class MultiscaleDecomp(Cheng2020Anchor):
     def __init__(self, N=192, opt=None, **kwargs):
-        super().__init__(N = N, **kwargs)
-        self.use_fea = opt['network']['criterions']['criterion_fea']
-
+        super().__init__(N=N, **kwargs)
         self.g_a = None
         self.g_a_block1 = nn.Sequential(
             ResidualBlockWithStride(3, N, stride=2),
@@ -52,7 +50,7 @@ class MultiscaleDecomp(Cheng2020Anchor):
         y_inter, y = self.g_a_func(x, denoise=True)
 
         # g_a for clean input
-        if self.use_fea and gt is not None:
+        if gt is not None:
             y_inter_gt, y_gt = self.g_a_func(gt)
         else:
             y_inter_gt, y_gt = None, None

@@ -23,12 +23,11 @@ def parse(opt_path, is_train=True):
 
     # path
     opt['path']['root'] = os.path.abspath(os.path.join(__file__, os.path.pardir, os.path.pardir, os.path.pardir, os.path.pardir))
+    opt['path']['experiments_root'] = os.path.join(opt['path']['root'], 'experiments', opt['name'])
     if is_train:
-        experiments_root = os.path.join(opt['path']['root'], 'experiments', opt['name'])
-        opt['path']['experiments_root'] = experiments_root
-        opt['path']['checkpoints'] = os.path.join(experiments_root, 'checkpoints')
-        opt['path']['log'] = experiments_root
-        opt['path']['val_samples'] = os.path.join(experiments_root, 'val_samples')
+        opt['path']['checkpoints'] = os.path.join(opt['path']['experiments_root'], 'checkpoints')
+        opt['path']['log'] = opt['path']['experiments_root']
+        opt['path']['val_samples'] = os.path.join(opt['path']['experiments_root'], 'val_samples')
 
         # change some options for debug mode
         if 'debug' in opt['name']:
@@ -38,9 +37,9 @@ def parse(opt_path, is_train=True):
             opt['logger']['print_freq'] = 1
             opt['logger']['save_checkpoint_freq'] = 1
     else:  # test
-        results_root = os.path.join(opt['path']['root'], 'results', opt['name'])
-        opt['path']['results_root'] = results_root
-        opt['path']['log'] = results_root
+        opt['path']['checkpoint_updated'] = os.path.join(opt['path']['experiments_root'], 'checkpoint_updated')
+        opt['path']['results_root'] = os.path.join(opt['path']['root'], 'results', opt['name'])
+        opt['path']['log'] = opt['path']['results_root']
 
     return opt
 

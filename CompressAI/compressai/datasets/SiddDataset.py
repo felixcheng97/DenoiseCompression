@@ -7,13 +7,15 @@ from PIL import Image
 from torchvision import transforms
 
 class SiddDataset(Dataset):
-    def __init__(self, root, transform=None, split="train", dataset_opt=None):
-        self.root = root
+    def __init__(self, dataset_opt):
+        self.root = dataset_opt['root']
         self.transform = transforms.ToTensor()
-        self.patch_size = dataset_opt['patch_size'] if dataset_opt is not None else -1
-        self.split = split
+        self.patch_size = dataset_opt['patch_size']
+        self.phase = dataset_opt['phase']
+        if self.phase not in ['train', 'val', 'sidd']:
+            raise NotImplementedError('wrong phase argument!')
 
-        alpha = 60 if split == 'train' else 1
+        alpha = 60 if self.phase == 'train' else 1
         self.samples = []
         with open(self.root, 'r') as f:
             data = json.load(f)
@@ -27,7 +29,7 @@ class SiddDataset(Dataset):
     def __getitem__(self, index):
         sample_dict = self.samples[index]
 
-        if self.split == 'train':
+        if self.phase == 'train':
             img_dir = sample_dict['img_dir']
             gt_prefix = sample_dict['gt_prefix']
             noisy_prefix = sample_dict['noisy_prefix']            
@@ -55,14 +57,12 @@ class SiddDataset(Dataset):
                 for c in cs:
                     gt_path = os.path.join(img_dir, '{:s}_{:02d}_{:02d}.png'.format(gt_prefix, r+1, c+1))
                     gt_rc = Image.open(gt_path).convert("RGB")
-                    if self.transform:
-                        gt_rc = self.transform(gt_rc)
+                    gt_rc = self.transform(gt_rc)
                     gt_r.append(gt_rc)
                     
                     noisy_path = os.path.join(img_dir, '{:s}_{:02d}_{:02d}.png'.format(noisy_prefix, r+1, c+1))
                     noisy_rc = Image.open(noisy_path).convert("RGB")
-                    if self.transform:
-                        noisy_rc = self.transform(noisy_rc)
+                    noisy_rc = self.transform(noisy_rc)
                     noisy_r.append(noisy_rc)
                 gt_r = torch.cat(gt_r, dim=2)
                 gt.append(gt_r)
@@ -72,22 +72,18 @@ class SiddDataset(Dataset):
             noisy = torch.cat(noisy, dim=1)[:, rnd_h:rnd_h+self.patch_size, rnd_w:rnd_w+self.patch_size]
             return gt, noisy
 
-        elif self.split == 'val':
+        elif self.phase == 'val':
             gt = Image.open(sample_dict['gt_path']).convert("RGB")
             noisy = Image.open(sample_dict['noisy_path']).convert("RGB")
-            if self.transform:
-                gt = self.transform(gt)
-                noisy = self.transform(noisy)
+            gt = self.transform(gt)
+            noisy = self.transform(noisy)
             return gt, noisy
         
-        elif self.split == 'test':
-            noisy = Image.open(sample_dict['noisy_path']).convert("RGB")
-            if self.transform:
-                noisy = self.transform(noisy)
-            return noisy
-        
         else:
-            raise NotImplementedError('wrong split argument!')
+            noisy = Image.open(sample_dict['noisy_path']).convert("RGB")
+            noisy = self.transform(noisy)
+            return noisy
+            
 
     def __len__(self):
         return len(self.samples)

@@ -4,11 +4,11 @@
 # experiments related
 experiments.zip
 results.zip
-experiments/
-tb_logger/
-results/
-reports/
-plots/
+experiments*/
+tb_logger*/
+results*/
+reports*/
+plots*/
 
 # for compressai
 *.bin

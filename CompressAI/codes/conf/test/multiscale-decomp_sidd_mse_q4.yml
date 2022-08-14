@@ -1,0 +1,30 @@
+#### general settings
+
+name: multiscale-decomp_sidd_mse_q4
+use_tb_logger: true
+gpu_ids: [0]
+# manual_seed: 1
+
+#### datasets
+
+datasets:
+  sidd:
+    root: ./annotations/sidd_medium_srgb_test.json
+    name: sidd
+    batch_size: 1
+    n_workers: 0
+    use_shuffle: false
+    cuda: false
+    estimation: false
+  
+#### network
+
+network:
+  model: multiscale-decomp
+  
+
+#### path
+path:
+  root: ~/
+  # checkpoint: ../../experiments/multiscale-decomp_sidd_mse_q4/checkpoints/checkpoint_best_loss.pth.tar
+  update: true

@@ -18,7 +18,6 @@ from utils.util import (
     torch2img, 
     compute_metrics, 
     AverageMeter, 
-    configure_optimizers, 
 )
 from criterions.criterion import Criterion
 
@@ -68,14 +67,14 @@ def main():
     if opt['path'].get('checkpoint', None):
         # distributed resuming: all load into default GPU
         device_id = torch.cuda.current_device()
-        resume_state = torch.load(opt['path']['checkpoint'],
+        checkpoint = torch.load(opt['path']['checkpoint'],
                                   map_location=lambda storage, loc: storage.cuda(device_id))
     else:
-        resume_state = None
+        checkpoint = None
 
     #### mkdir and loggers
     if rank <= 0:  # normal training (rank -1) OR distributed training (rank 0)
-        if resume_state is None:
+        if checkpoint is None:
             util.mkdir_and_rename(
                 opt['path']['experiments_root'])  # rename experiment folder if exists
             util.mkdirs((path for key, path in opt['path'].items() if not key == 'experiments_root'
@@ -162,31 +161,27 @@ def main():
     assert val_loader is not None
 
     #### create model
-    model = create_model(opt, resume_state, rank)
+    model = create_model(opt, checkpoint, None, rank)
     model = model.to(device)
 
     #### create optimizer and schedulers
     optimizer_dict = configure_optimizers(opt, model)
     scheduler_dict = configure_schedulers(opt, optimizer_dict)
 
-    optimizer = load_optimizer(optimizer_dict, 'optimizer', resume_state)
-    D_optimizer = load_optimizer(optimizer_dict, 'D_optimizer', resume_state)
-    aux_optimizer = load_optimizer(optimizer_dict, 'aux_optimizer', resume_state)
+    optimizer = load_optimizer(optimizer_dict, 'optimizer', checkpoint)
+    aux_optimizer = load_optimizer(optimizer_dict, 'aux_optimizer', checkpoint)
     
-    lr_scheduler = load_scheduler(scheduler_dict, 'lr_scheduler', resume_state)
-    D_lr_scheduler = load_scheduler(scheduler_dict, 'D_lr_scheduler', resume_state)
-    aux_lr_scheduler = load_scheduler(scheduler_dict, 'aux_lr_scheduler', resume_state)
+    lr_scheduler = load_scheduler(scheduler_dict, 'lr_scheduler', checkpoint)
+    aux_lr_scheduler = load_scheduler(scheduler_dict, 'aux_lr_scheduler', checkpoint)
     
     #### resume training
-    if resume_state:
-        # if 'iter' not in resume_state.keys():
-        #     resume_state['iter'] = 0
+    if checkpoint:
         if rank <= 0: 
             logger.info('Resuming training from epoch: {}, iter: {}.'.format(
-                resume_state['epoch'], resume_state['iter']))
+                checkpoint['epoch'], checkpoint['iter']))
         # training state
-        start_epoch = resume_state['epoch']
-        best_loss = resume_state['loss']
+        start_epoch = checkpoint['epoch']
+        best_loss = checkpoint['loss']
         current_step = start_epoch * math.ceil(len(train_loader.dataset) / opt['datasets']['train']['batch_size'])
         checkpoint = None
     else:
@@ -210,18 +205,9 @@ def main():
             train_sampler.set_epoch(epoch)
         if rank <= 0 and mode == 'epoch':
             message = 'lr_main: {:e}'.format(optimizer.param_groups[0]['lr'])
-            if D_optimizer is not None:
-                message += ' | lr_d: {:e}'.format(D_optimizer.param_groups[0]['lr'])
             message += ' | lr_aux: {:e}'.format(aux_optimizer.param_groups[0]['lr'])
             logger.info(message)
-        # if epoch < 450:
-        #     current_step = 450 * math.ceil(len(train_loader.dataset) / opt['datasets']['train']['batch_size'])
-        #     if mode == 'epoch':
-        #         lr_scheduler.step()
-        #         if D_lr_scheduler is not None:
-        #             D_lr_scheduler.step()
-        #         aux_lr_scheduler.step()
-        #     continue
+
         for _, train_data in enumerate(train_loader):
             # torch.cuda.empty_cache()
             current_step += 1
@@ -236,8 +222,6 @@ def main():
             noise = noise.to(device)
 
             optimizer.zero_grad()
-            if opt['network']['criterions']['criterion_adv']:
-                D_optimizer.zero_grad()
             aux_optimizer.zero_grad()
 
             # forward
@@ -259,13 +243,6 @@ def main():
                 optimizer.zero_grad()
             optimizer.step()
 
-            # optimize D
-            if opt['network']['criterions']['criterion_adv']:
-                out_train["d_loss"].backward()
-                if not optimizer_flag:
-                    D_optimizer.zero_grad()
-                D_optimizer.step()
-
             # aux_optimizer
             aux_loss = model.aux_loss()
             out_train['aux_loss'] = aux_loss
@@ -273,27 +250,10 @@ def main():
             if not optimizer_flag:
                 aux_optimizer.zero_grad()
             aux_optimizer.step()
-            
-            # if True:
-            #     loss = torch.nn.MSELoss()
-            #     print(torch.max(out_net['x_hat']), torch.min(out_net['x_hat']))
-            #     print(loss(out_net['x_hat'].view(-1), gt.view(-1)))
-            #     rec = torch2img(out_net['x_hat'])
-            #     gt = torch2img(gt)
-            #     noise = torch2img(noise)
-            #     import numpy as np
-            #     # print('gt', np.max(np.array(gt).reshape(-1)), np.min(np.array(gt).reshape(-1)))
-            #     # print('rec', np.max(np.array(rec).reshape(-1)), np.min(np.array(rec).reshape(-1)))
-            #     # print('noise', np.max(np.array(noise).reshape(-1)), np.min(np.array(noise).reshape(-1)))
-            #     rec.save(os.path.join('{:03d}_rec.png'.format(current_step)))
-            #     gt.save(os.path.join('{:03d}_gt.png'.format(current_step)))
-            #     noise.save(os.path.join('{:03d}_noise.png'.format(current_step)))
 
             #### update learning rate for step mode
             if mode == 'step':
                 lr_scheduler.step()
-                if D_lr_scheduler is not None:
-                    D_lr_scheduler.step()
                 aux_lr_scheduler.step()
 
             #### log: weighted loss
@@ -408,9 +368,6 @@ def main():
                         "lr_scheduler": scheduler_dict['lr_scheduler'].state_dict(),
                         "aux_lr_scheduler": scheduler_dict['aux_lr_scheduler'].state_dict(),
                     }
-                    if 'D_optimizer' in optimizer_dict.keys():
-                        save_dict['D_optimizer'] = optimizer_dict['D_optimizer'].state_dict()
-                        save_dict['D_lr_scheduler'] = scheduler_dict['D_lr_scheduler'].state_dict()
                     mode_counter = epoch if mode == 'epoch' else current_step
                     save_path = os.path.join(opt['path']['checkpoints'], "checkpoint_best_loss.pth.tar")
                     torch.save(save_dict, save_path)
@@ -431,9 +388,6 @@ def main():
                 "lr_scheduler": scheduler_dict['lr_scheduler'].state_dict(),
                 "aux_lr_scheduler": scheduler_dict['aux_lr_scheduler'].state_dict(),
             }
-            if 'D_optimizer' in optimizer_dict.keys():
-                save_dict['D_optimizer'] = optimizer_dict['D_optimizer'].state_dict()
-                save_dict['D_lr_scheduler'] = scheduler_dict['D_lr_scheduler'].state_dict()
             mode_counter = epoch if mode == 'epoch' else current_step
             save_path = os.path.join(opt['path']['checkpoints'], "checkpoint_{:d}.pth.tar".format(mode_counter))
             torch.save(save_dict, save_path)
@@ -441,8 +395,6 @@ def main():
         #### update learning rate for epoch mode
         if mode == 'epoch':
             lr_scheduler.step()
-            if D_lr_scheduler is not None:
-                D_lr_scheduler.step()
             aux_lr_scheduler.step()
 
     if rank <= 0:
@@ -457,9 +409,6 @@ def main():
             "lr_scheduler": scheduler_dict['lr_scheduler'].state_dict(),
             "aux_lr_scheduler": scheduler_dict['aux_lr_scheduler'].state_dict(),
         }
-        if 'D_optimizer' in optimizer_dict.keys():
-            save_dict['D_optimizer'] = optimizer_dict['D_optimizer'].state_dict()
-            save_dict['D_lr_scheduler'] = scheduler_dict['D_lr_scheduler'].state_dict()
         mode_counter = epoch if mode == 'epoch' else current_step
         save_path = os.path.join(opt['path']['checkpoints'], "checkpoint_latest.pth.tar")
         torch.save(save_dict, save_path)
