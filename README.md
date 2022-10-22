@@ -2,6 +2,9 @@
 
 **Official PyTorch Implementation for [Optimizing Image Compression via Joint Learning with Denoising (ECCV2022)](https://arxiv.org/abs/2207.10869).**
 
+**External Links: [Pre-recorded Video](https://www.youtube.com/watch?v=bZe_0STOyHI)** 
+<!-- | [Supplements]() -->
+
 > **Optimizing Image Compression via Joint Learning with Denoising** <br>
 >  Ka Leong Cheng*, Yueqi Xie*, Qifeng Chen <br>
 >  HKUST <br>
